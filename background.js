@@ -14,6 +14,11 @@ function onTabFocusChange(tab){
 	console.log('tab focus change event fired')
 }
 
+function getURL(tab){
+	var current_url = tab.url
+	var url_origin = new URL(current_url).origin
+	return url_origin
+}
 browser.tabs.onCreated.addListener(onTabCreation)
 browser.tabs.onUpdated.addListener(onTabUpdate)
 browser.tabs.onRemoved.addListener(onTabRemoval)
