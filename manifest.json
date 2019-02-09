@@ -1,4 +1,10 @@
 {
+  "applications": {
+      "gecko": {
+         "id": "TimeTrackerInator@p-lucero.me"
+      }
+  },
+
   // "browser_specific_settings": {
   //   "gecko": {
   //     "id": "addon@example.com",
@@ -6,9 +12,9 @@
   //   }
   // },
 
-  "background": {
-    "scripts": ["background.js"]
-  },
+  // "background": {
+  //   "scripts": ["background.js"]
+  // },
 
   // "browser_action": {
   //   "default_icon": {
@@ -31,13 +37,13 @@
 
   // "content_security_policy": "script-src 'self' https://example.com; object-src 'self'",
 
-  // "content_scripts": [
-  //   {
-  //     "exclude_matches": ["*://developer.mozilla.org/*"],
-  //     "matches": ["*://*.mozilla.org/*"],
-  //     "js": ["borderify.js"]
-  //   }
-  // ],
+  "content_scripts": [
+    {
+      "exclude_matches": ["*://developer.mozilla.org/*"],
+      "matches": ["*://*.mozilla.org/*"],
+      "js": ["background.js"]
+    }
+  ],
 
   "default_locale": "en",
 
@@ -49,7 +55,7 @@
   // },
 
   "icons": {
-    "400": "icons/doofen.jpg"
+    "48": "icons/doofen.png"
   },
 
   "manifest_version": 2,
@@ -67,7 +73,7 @@
 
   "permissions": ["activeTab", "tabs"],
 
-  "version": "0.1",
+  "version": "0.1"
 
   // "web_accessible_resources": ["images/my-image.png"]
 }
