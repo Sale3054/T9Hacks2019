@@ -69,7 +69,7 @@
   //   "default_popup": "popup/geo.html"
   // },
 
-  "permissions": ["activeTab", "tabs"],
+  "permissions": ["activeTab", "storage", "unlimitedStorage", "tabs"],
 
   "version": "0.1"
 

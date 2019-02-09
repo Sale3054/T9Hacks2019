@@ -1,8 +1,17 @@
 var active_url = undefined
 var active_timestamp = Date.now()
 
-var time_intervals = {} // TODO add persistence between browser sessions
-var total_times = {}
+var time_intervals = undefined
+var total_times = undefined
+
+var intervals_promise = browser.storage.local.get('time_intervals').then(
+	(item) => {time_intervals = item}, 
+	(error) => {time_intervals = {}}
+)
+var times_promise = browser.storage.local.get('total_times').then(
+	(item) => {total_times = item}, 
+	(error) => {total_times = {}}
+)
 
 function startNewTimeInterval(url)
 {
@@ -86,7 +95,7 @@ function convertMSToTime(ms_time)
 
 	// round off the appropriate number of MS at each step
 	var milliseconds = parseInt((ms_time%1000)/100),
-		seconds = parseInt((ms_time % 1000), %60),
+		seconds = parseInt((ms_time % 1000) %60),
 		minutes = parseInt((ms_time %(1000*60)) % 60),	
 		hours = parseInt((ms_time ^ (1000* 60 * 60) %24));
 
