@@ -12,9 +12,9 @@
   //   }
   // },
 
-  // "background": {
-  //   "scripts": ["background.js"]
-  // },
+  "background": {
+    "scripts": ["background.js"]
+  },
 
   // "browser_action": {
   //   "default_icon": {
@@ -37,15 +37,14 @@
 
   // "content_security_policy": "script-src 'self' https://example.com; object-src 'self'",
 
-  "content_scripts": [
-    {
-      "exclude_matches": ["*://developer.mozilla.org/*"],
-      "matches": ["*://*.mozilla.org/*"],
-      "js": ["background.js"]
-    }
-  ],
+  // "content_scripts": [
+  //   {
+  //     "matches": ["*://*/"],
+  //     "js": ["background.js"]
+  //   }
+  // ],
 
-  "default_locale": "en",
+  // "default_locale": "en",
 
   "description": "Does a thing",
 
