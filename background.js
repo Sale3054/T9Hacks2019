@@ -1,20 +1,77 @@
 var active_url = undefined
 var active_timestamp = Date.now()
+var current_day = undefined
 
-var time_intervals = undefined
-var total_times = undefined
+var time_intervals = {}
+var total_times = {}
+var unique_days = undefined
 
-var intervals_promise = browser.storage.local.get('time_intervals').then(
-	(item) => {time_intervals = item}, 
-	(error) => {time_intervals = {}}
+var array_zeroes = []
+
+for (let i = 0; i < 24; i++)
+{
+	array_zeroes.push(0)
+}
+
+var milliseconds_in_day = 1000 * 60 * 60 * 24
+var milliseconds_in_week = milliseconds_in_day * 7
+var milliseconds_in_year = milliseconds_in_day * 365
+
+function updateDay()
+{
+	var real_day = new Date().toISOString().slice(0, 10)
+	if (real_day !== current_day)
+	{
+		current_day = real_day
+		real_day_obj = new Date(real_day)
+		for (day in unique_days)
+		{
+			if (real_day_obj - new Date(day) > milliseconds_in_year)
+			{
+				browser.storage.local.remove(day).then(
+					() => {}, (e) => {console.log(e)}
+				)
+			}
+			if (real_day_obj - new Date(day) > milliseconds_in_week)
+			{
+				browser.storage.local.remove(day + '-intervals').then(
+					() => {}, (e) => {console.log(e)}
+				)
+			}
+		}
+	}
+}
+
+browser.storage.local.get('unique_days').then(
+	(item) => {unique_days = item}, 
+	(error) => {unique_days = {}}
 )
-var times_promise = browser.storage.local.get('total_times').then(
-	(item) => {total_times = item}, 
-	(error) => {total_times = {}}
+
+updateDay()
+
+for (day in unique_days)
+{
+	browser.storage.local.get(day).then(
+		(item) => {total_times[day] = item},
+		(error) => {} // TODO
+	)
+	if (new Date() - new Date(day) < milliseconds_in_week)
+	{
+		browser.storage.local.get(day + '-intervals').then(
+			(item) => {total_times[day] = item},
+			(error) => {} // TODO
+		)
+	}
+}
+
+var alltime_data_promise = browser.storage.local.get('alltime-values').then(
+	(item) => {total_times['alltime-values'] = item},
+	(error) => {} // TODO	
 )
 
 function startNewTimeInterval(url)
 {
+	// don't create intervals for internal firefox tabs
 	if (url !== "null")
 	{
 		console.log('Starting a new time interval for ' + url)
@@ -25,24 +82,26 @@ function startNewTimeInterval(url)
 
 function stopCurrentTimeInterval()
 {
+	// if we're not actually on a page right now, don't add a new time interval
 	if (active_url !== undefined)
 	{
 		console.log('Stopping the time interval for ' + active_url)
 		var end_timestamp = Date.now()
-		if (time_intervals[active_url] === undefined)
-		{
-			time_intervals[active_url] = []
-		}
-		time_intervals[active_url].push([active_timestamp, end_timestamp])
-		if (total_times[active_url] === undefined)
-		{
-			total_times[active_url] = end_timestamp - active_timestamp
-		}
-		else
-		{
-			total_times[active_url] += end_timestamp - active_timestamp		
-		}
-		active_url = undefined
+		// TODO refactor the storage mechanism based on new mechanisms
+		// if (time_intervals[active_url] === undefined)
+		// {
+		// 	time_intervals[active_url] = []
+		// }
+		// time_intervals[active_url].push([active_timestamp, end_timestamp])
+		// if (total_times[active_url] === undefined)
+		// {
+		// 	total_times[active_url] = end_timestamp - active_timestamp
+		// }
+		// else
+		// {
+		// 	total_times[active_url] += end_timestamp - active_timestamp		
+		// }
+		// active_url = undefined
 	}
 }
 
@@ -89,7 +148,6 @@ function getURL(tab)
 	}
 }
 
-
 function convertMSToTime(ms_time)
 {
 
@@ -106,6 +164,7 @@ function convertMSToTime(ms_time)
 	//return the result
 	return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
 }
+
 browser.tabs.onCreated.addListener(onTabCreation)
 browser.tabs.onUpdated.addListener(onTabUpdate)
 browser.tabs.onRemoved.addListener(onTabRemoval)
