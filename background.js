@@ -22,8 +22,7 @@ var milliseconds_in_month = milliseconds_in_day * 30
 var milliseconds_in_year = milliseconds_in_day * 365
 
 browser.storage.local.get('unique_days').then(
-	// (item) => {unique_days = []; updateDay()},
-	(item) => {unique_days = item['unique_days']; updateDay()}, 
+	(item) => {unique_days = item['unique_days'] || []; updateDay()}, 
 	(error) => {unique_days = []; updateDay()}
 )
 
@@ -73,29 +72,25 @@ function retrieveDatabaseInfo()
 	for (day of unique_days)
 	{
 		browser.storage.local.get(day).then(
-			// (item) => {},
-			(item) => {total_times[day] = item[day]},
+			(item) => {total_times[day] = item[day] || {}},
 			(error) => {total_times[day] = {}}
 		)
 		if (new Date() - new Date(day) < milliseconds_in_week)
 		{
 			browser.storage.local.get(day + '-intervals').then(
-				// (item) => {},
-				(item) => {time_intervals[day] = item[day]},
+				(item) => {time_intervals[day] = item[day] || {}},
 				(error) => {time_intervals[day] = {}}
 			)
 		}
 	}
 
 	browser.storage.local.get('alltime_per_site').then(
-		// (item) => {},
-		(item) => {alltime_per_site = item['alltime_per_site']},
+		(item) => {alltime_per_site = item['alltime_per_site'] || {}},
 		(error) => {console.log(error)}
 	)
 
 	browser.storage.local.get('alltime_per_day').then(
-		// (item) => {},
-		(item) => {alltime_per_day = item['alltime_per_day']},
+		(item) => {alltime_per_day = item['alltime_per_day'] || array_zeroes.slice(0)},
 		(error) => {console.log(error)}
 	)
 }
