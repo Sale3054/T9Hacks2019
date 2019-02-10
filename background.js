@@ -47,7 +47,7 @@ function updateDay()
 	}
 }
 
-Object.filter = function(obj, predicate) {
+function objectFilter(obj, predicate) {
     var result = {}, key
     for (key in obj) {
         if (obj.hasOwnProperty(key) && !predicate(obj[key])) {
@@ -80,12 +80,12 @@ for (day in unique_days)
 }
 
 browser.storage.local.get('alltime_per_site').then(
-	(item) => {total_times['alltime_per_site'] = item},
+	(item) => {alltime_per_site = item},
 	(error) => {} // TODO	
 )
 
 browser.storage.local.get('alltime_per_day').then(
-	(item) => {total_times['alltime_per_day'] = item},
+	(item) => {alltime_per_day = item},
 	(error) => {} // TODO	
 )
 
@@ -115,17 +115,20 @@ function stopCurrentTimeInterval()
 		{
 			time_intervals[current_day][interval_url] = []	
 		}
-		time_intervals[current_day][interval_url].push([active_timestamp, end_timestamp])
-		if (total_times[current_day] === undefined)
+		time_intervals[current_day][interval_url].push([interval_timestamp, end_timestamp])
+		var temp_timestamp = interval_timestamp
+		while (temp_timestamp < end_timestamp)
 		{
-			total_times[current_day] = {}
+			current_day = new Date().toISOString().slice(0, 10)
+			if (total_times[current_day] === undefined)
+			{
+				total_times[current_day] = {}
+			}
+			if (total_times[current_day][interval_url] === undefined)
+			{
+				total_times[current_day] = array_zeroes.slice(0) // duplicate the array
+			} // TODO a lot of stuff
 		}
-		if (total_times[current_day][interval_url] === undefined)
-		{
-			total_times[current_day] = array_zeroes.slice(0) // duplicate the array
-		}
-		// find the indices of total_times[current_day][interval_url] to add to,
-		// add to those indices
 		interval_url = undefined
 	}
 }
@@ -192,30 +195,31 @@ function convertMSToTime(ms_time)
 
 function databaseQueryResponder(request, sender, sendResponse)
 {
+	console.log(request.type)
 	var current_timestamp = new Date(current_day)
 	if (request.type === "1day")
 	{
-		sendResponse(total_times.filter((key) => {return current_timestamp === new Date(key)}))
+		sendResponse(objectFilter(total_times, (key) => {return current_timestamp === new Date(key)}))
 	}
 	else if (request.type === "1week")
 	{
-		sendResponse(total_times.filter((key) => {return current_timestamp - new Date(key) < milliseconds_in_week}))
+		sendResponse(objectFilter(total_times, (key) => {return current_timestamp - new Date(key) < milliseconds_in_week}))
 	}
 	else if (request.type === "1month")
 	{
-		sendResponse(total_times.filter((key) => {return current_timestamp - new Date(key) < milliseconds_in_month}))
+		sendResponse(objectFilter(total_times, (key) => {return current_timestamp - new Date(key) < milliseconds_in_month}))
 	}
 	else if (request.type === "3month")
 	{
-		sendResponse(total_times.filter((key) => {return current_timestamp - new Date(key) < milliseconds_in_month * 3}))
+		sendResponse(objectFilter(total_times, (key) => {return current_timestamp - new Date(key) < milliseconds_in_month * 3}))
 	}
 	else if (request.type === "6month")
 	{
-		sendResponse(total_times.filter((key) => {return current_timestamp - new Date(key) < milliseconds_in_month * 6}))
+		sendResponse(objectFilter(total_times, (key) => {return current_timestamp - new Date(key) < milliseconds_in_month * 6}))
 	}
 	else if (request.type === "1year")
 	{
-		sendResponse(total_times.filter((key) => {return current_timestamp - new Date(key) < milliseconds_in_year}))
+		sendResponse(objectFilter(total_times, (key) => {return current_timestamp - new Date(key) < milliseconds_in_year}))
 	}
 	else if (request.type === "alltimesite")
 	{

@@ -32,7 +32,7 @@ function listenForClicks() {
      * send a "beastify" message to the content script in the active tab.
      */
     function requestDate(e) {
-    	console.log("Creating dead object");
+    	// console.log("Creating dead object");
         let date_range = buttonTextToDateRange(e.target.textContent);
         var sending = browser.runtime.sendMessage({type : date_range});
         sending.then(handleResponse, handleError);
@@ -47,7 +47,8 @@ function listenForClicks() {
 
     function handleResponse(message)
     {
-    	console.log(`Message from the background script: ${message.response}`);
+    	// console.log(`Message from the background script: ${message}`);
+      console.log(message)
     }
   });
 }
