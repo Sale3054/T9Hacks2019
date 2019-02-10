@@ -1,4 +1,4 @@
-
+var myChart = undefined
 /**
  * Listen for clicks on the buttons, and send the appropriate message to
  * the content script in the page.
@@ -58,14 +58,13 @@ function listenForClicks() {
       Second Key : Val combo is 
       Website Host : Numbers => cumulative miliseconds spent by hour
       */
-      if (myChart != undefined)
+      if (myChart !== undefined)
       {
         destroyChart();
       }
       var top_10_sites = 0;
       var ctx = document.getElementById("myChart").getContext('2d');
       var site_dict = {};
-
       for (var day in message)
       {
         for (var site in message[day])
@@ -80,28 +79,30 @@ function listenForClicks() {
           }
         }
       }
-      site_kv_pairs = site_dict.entries();
+      site_kv_pairs = Object.entries(site_dict);
       var keys = [];
+      var times_to_sites = {}
       for(i = 0; i < site_kv_pairs.length; i++)
       {
-        keys.push(site_kv_pairs[i].reverse());
+        keys.push(site_kv_pairs[i][1]);
+        times_to_sites[site_kv_pairs[i][1]] = site_kv_pairs[i][0]
       }
 
-      keys.sort().reverse()
+      keys.sort((a, b) => {return a - b}).reverse()
       var labels = []
       var dataum = []
 
       for(i = 0; i < 10; i ++)
       {
-        if(keys[i] == undefined)
+        if(keys[i] === undefined)
         {
           break;
         }
-        labels.push(keys[i][1]);
-        dataum.push(keys[i][0]);
+        dataum.push(keys[i]/1000/60);
+        labels.push(times_to_sites[keys[i]]);
       }
 
-      var myChart = new Chart(ctx, {
+      myChart = new Chart(ctx, {
           type: 'horizontalBar',
           data: {
               labels: labels,
@@ -134,8 +135,9 @@ function listenForClicks() {
                       'rgba(255, 159, 64, 1)',
 
                   ],
+
                   borderWidth: 1
-              }]
+              }],
           },
           options: {
               scales: {
@@ -147,9 +149,6 @@ function listenForClicks() {
               }
           }
       });
-
-
-
     }
   });
 }
@@ -186,7 +185,11 @@ var _lastTarget = "btn1"
 // Fixes our memory leaks
 function destroyChart()
 {
-  myChart.destroy();
+  if (myChart !== undefined)
+  {
+    myChart.destroy();
+  }
+
 }
 
 // handles tab selection
@@ -198,9 +201,27 @@ function changeSelected(e)
     _lastTarget = e.target.id;
 }
 
+function convertMSToTime(ms_time)
+{
+  // round off the appropriate number of MS at each step
+  var milliseconds = parseInt((ms_time%1000)/100),
+    seconds = parseInt((ms_time % 1000) %60),
+    minutes = parseInt((ms_time %(1000*60)) % 60),  
+    hours = parseInt((ms_time ^ (1000* 60 * 60) %24));
+
+  //roll over to tens for a display like 10:01:99 instead of 10:1:99
+  hours = (hours < 10) ? "0" + hours : hours;
+  minutes = (minutes < 10) ? "0" + minutes : minutes;
+  seconds = (seconds < 10) ? "0" + seconds: seconds;
+  //return the result
+  return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
+}
+
 window.addEventListener("unload", destroyChart);
 var btn_list = ["btn1", "btn2", "btn3", "btn4", "btn5", "btn6"];
 for (button of btn_list)
 {
     document.getElementById(button).addEventListener("click", changeSelected);   
 }
+
+document.getElementById("btn1").click()
