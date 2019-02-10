@@ -22,7 +22,8 @@ var milliseconds_in_month = milliseconds_in_day * 30
 var milliseconds_in_year = milliseconds_in_day * 365
 
 browser.storage.local.get('unique_days').then(
-	(item) => {unique_days = item}, 
+	// (item) => {unique_days = []; updateDay()},
+	(item) => {unique_days = item['unique_days']; updateDay()}, 
 	(error) => {unique_days = []; updateDay()}
 )
 
@@ -32,34 +33,37 @@ function updateDay()
 	if (updated_day !== current_day)
 	{
 		current_day = updated_day
-		current_timestamp = new Date(updated_day)
-		var indices_to_erase = []
-		unique_days.push(current_day)
-		for (let i = 0; i < unique_days.length; i++)
+		if (!unique_days.includes(updated_day))
 		{
-			if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_year)
+			current_timestamp = new Date(updated_day)
+			var indices_to_erase = []
+			unique_days.push(current_day)
+			for (let i = 0; i < unique_days.length; i++)
 			{
-				browser.storage.local.remove(unique_days[i]).then(
-					() => {}, (e) => {console.log(e)}
-				)
-				indices_to_erase.push(i)
+				if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_year)
+				{
+					browser.storage.local.remove(unique_days[i]).then(
+						() => {}, (e) => {console.log(e)}
+					)
+					indices_to_erase.push(i)
+				}
+				if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_week)
+				{
+					browser.storage.local.remove(unique_days[i] + '-intervals').then(
+						() => {}, (e) => {console.log(e)}
+					)
+				}
 			}
-			if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_week)
+			for (let j = unique_days.length - 1; j >= 0; j--)
 			{
-				browser.storage.local.remove(unique_days[i] + '-intervals').then(
-					() => {}, (e) => {console.log(e)}
-				)
+				if (j === indices_to_erase[indices_to_erase.length - 1])
+				{
+					unique_days.splice(j, 1)
+					indices_to_erase.splice(indices_to_erase.length - 1, 1)
+				}
 			}
+			browser.storage.local.set({'unique_days' : unique_days})
 		}
-		for (let j = unique_days.length - 1; j >= 0; j--)
-		{
-			if (j === indices_to_erase[indices_to_erase.length - 1])
-			{
-				unique_days.splice(j, 1)
-				indices_to_erase.splice(indices_to_erase.length - 1, 1)
-			}
-		}
-		browser.storage.local.set({'unique_days' : unique_days})
 	}
 	retrieveDatabaseInfo()
 }
@@ -69,25 +73,29 @@ function retrieveDatabaseInfo()
 	for (day of unique_days)
 	{
 		browser.storage.local.get(day).then(
-			(item) => {total_times[day] = item},
+			// (item) => {},
+			(item) => {total_times[day] = item[day]},
 			(error) => {total_times[day] = {}}
 		)
 		if (new Date() - new Date(day) < milliseconds_in_week)
 		{
 			browser.storage.local.get(day + '-intervals').then(
-				(item) => {time_intervals[day] = item},
+				// (item) => {},
+				(item) => {time_intervals[day] = item[day]},
 				(error) => {time_intervals[day] = {}}
 			)
 		}
 	}
 
 	browser.storage.local.get('alltime_per_site').then(
-		(item) => {alltime_per_site = item},
+		// (item) => {},
+		(item) => {alltime_per_site = item['alltime_per_site']},
 		(error) => {console.log(error)}
 	)
 
 	browser.storage.local.get('alltime_per_day').then(
-		(item) => {alltime_per_day = item},
+		// (item) => {},
+		(item) => {alltime_per_day = item['alltime_per_day']},
 		(error) => {console.log(error)}
 	)
 }
