@@ -7,20 +7,27 @@
   </head>
 
 <body>
-  <div id="popup-content">
-    <div class="button beast">Daily</div>
-    <div class="button beast">Weekly</div>
-    <div class="button beast">Monthly</div>
-    <div class="button beast">3 Months</div>
-    <div class="button beast">6 Months</div>
-    <div class="button beast">1 Year</div>
-  </div>
+  <ul class="tabrow">
+    <li class="button hoover selected">Daily</li>
+
+    <li class="button hoover">Weekly</li>
+
+    <li class="button hoover">Monthly</li>
+
+    <li class="button hoover">3 Months</li>
+
+    <li class="button hoover">6 Months</li>
+
+    <li class="button hoover">1 Year</li>
+  </ul>
+
+  
   <div id="error-content" class="hidden">
     <p>Can't milk these.</p><p>Try a different page.</p>
   </div>
 
 <script src="../content_scripts/Chart.js"></script>
-<canvas class = "bungalo" id="myChart" width="400" height="400"></canvas>
+<canvas class = "bungalo" id="myChart" width="600" height="400"></canvas>
 <script src ='../content_scripts/summarize.js'></script>
 <script src="summarize.js"></script>
 </body>
