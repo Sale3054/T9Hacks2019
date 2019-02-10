@@ -6,11 +6,10 @@ function handleError(error) {
   console.log(`Error: ${error}`);
 }
 
-function notifyBackgroundPage(e) {
-  var sending = browser.runtime.sendMessage({
-  	type : "24HrArray"
-  });
-  sending.then(handleResponse, handleError);  
-}
 
+function requestDay(e, time)
+{
+	var sending = browser.runtime.sendMessage({ type : 'day'});
+	sending.then(handleResponse, handleError);
+}
 window.addEventListener("click", notifyBackgroundPage);
