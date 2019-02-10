@@ -6,9 +6,9 @@ function listenForClicks() {
   document.addEventListener("click", (e) => {
   	requestDate(e);
 
-    /**
-     * Given the name of a beast, get the URL to the corresponding image.
-     */
+    /** take the text from the buttons, and return the appropriate message
+    * format based on that input
+    **/
     function buttonTextToDateRange(buttonText) {
       switch (buttonText) {
         case "Daily":
@@ -25,29 +25,29 @@ function listenForClicks() {
           return '1year';
       }
     }
-
     /**
-     * Insert the page-hiding CSS into the active tab,
-     * then get the beast URL and
-     * send a "beastify" message to the content script in the active tab.
-     */
+    * request a promise from background.js 
+    * to retrieve the date range for the relevant time span referred
+    * to by buttonTextToDateRange
+    **/
     function requestDate(e) {
-    	// console.log("Creating dead object");
         let date_range = buttonTextToDateRange(e.target.textContent);
         var sending = browser.runtime.sendMessage({type : date_range});
         sending.then(handleResponse, handleError);
     }
 
     /**
-     * Just log the error to the console.
+     * Handle Promise Rejection
      */
     function handleError(error) {
       console.error(`Could not handle: ${error}`);
     }
 
+    /** 
+    * Handle Promise Response
+    **/
     function handleResponse(message)
     {
-    	// console.log(`Message from the background script: ${message}`);
       console.log(message)
     }
   });
@@ -63,6 +63,14 @@ function reportExecuteScriptError(error)
   document.querySelector("#error-content").classList.remove("hidden");
   console.error(`Failed to execute content script: ${error.message}`);
 }
+
+
+function changeClass(id)
+{
+  document.getElementById(id).selected = true;
+  console.log("Doing something...");
+}
+
 
 /**
  * When the popup loads, inject a content script into the active tab,

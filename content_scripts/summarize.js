@@ -1,5 +1,4 @@
-
-
+var _lastTarget = "btn1"
 var ctx = document.getElementById("myChart").getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'bar',
@@ -38,3 +37,24 @@ var myChart = new Chart(ctx, {
     }
 });
 
+// Fixes our memory leaks
+function destroyChart()
+{
+	myChart.destroy();
+}
+
+// handles tab selection
+function changeSelected(e)
+{
+    var old_target_obj = document.getElementById(_lastTarget)
+    old_target_obj.className = old_target_obj.className.replace('selected', '');
+    e.target.className += " selected";
+    _lastTarget = e.target.id;
+}
+
+window.addEventListener("unload", destroyChart);
+var btn_list = ["btn1", "btn2", "btn3", "btn4", "btn5", "btn6"];
+for (button of btn_list)
+{
+    document.getElementById(button).addEventListener("click", changeSelected);   
+}
