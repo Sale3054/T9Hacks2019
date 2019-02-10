@@ -20,7 +20,7 @@ function listenForClicks() {
         case "3 Months":
           return '1year';
         case "6 Months":
-          return '6months';
+          return '6month';
         case "1 Year":
           return '1year';
       }
