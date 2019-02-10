@@ -3,18 +3,18 @@ var interval_timestamp = new Date()
 var current_timestamp = undefined
 var current_day = undefined
 
-var time_intervals = {}
-var total_times = {}
-var alltime_per_site = undefined
-var alltime_per_day = undefined
-var unique_days = undefined
-
 var array_zeroes = []
 
 for (let i = 0; i < 24; i++)
 {
 	array_zeroes.push(0)
 }
+
+var time_intervals = {}
+var total_times = {}
+var alltime_per_site = {}
+var alltime_per_day = array_zeroes.slice(0)
+var unique_days = undefined
 
 var milliseconds_in_day = 1000 * 60 * 60 * 24
 var milliseconds_in_week = milliseconds_in_day * 7
@@ -23,7 +23,7 @@ var milliseconds_in_year = milliseconds_in_day * 365
 
 browser.storage.local.get('unique_days').then(
 	(item) => {unique_days = item}, 
-	(error) => {unique_days = {}; updateDay()}
+	(error) => {unique_days = []; updateDay()}
 )
 
 function updateDay()
@@ -34,6 +34,7 @@ function updateDay()
 		current_day = updated_day
 		current_timestamp = new Date(updated_day)
 		var indices_to_erase = []
+		unique_days.push(current_day)
 		for (let i = 0; i < unique_days.length; i++)
 		{
 			if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_year)
@@ -60,6 +61,35 @@ function updateDay()
 		}
 		browser.storage.local.set({'unique_days' : unique_days})
 	}
+	retrieveDatabaseInfo()
+}
+
+function retrieveDatabaseInfo()
+{
+	for (day of unique_days)
+	{
+		browser.storage.local.get(day).then(
+			(item) => {total_times[day] = item},
+			(error) => {total_times[day] = {}}
+		)
+		if (new Date() - new Date(day) < milliseconds_in_week)
+		{
+			browser.storage.local.get(day + '-intervals').then(
+				(item) => {time_intervals[day] = item},
+				(error) => {time_intervals[day] = {}}
+			)
+		}
+	}
+
+	browser.storage.local.get('alltime_per_site').then(
+		(item) => {alltime_per_site = item},
+		(error) => {console.log(error)}
+	)
+
+	browser.storage.local.get('alltime_per_day').then(
+		(item) => {alltime_per_day = item},
+		(error) => {console.log(error)}
+	)
 }
 
 function objectFilter(obj, predicate) {
@@ -71,31 +101,6 @@ function objectFilter(obj, predicate) {
     }
     return result;
 }
-
-for (day in unique_days)
-{
-	browser.storage.local.get(day).then(
-		(item) => {total_times[day] = item},
-		(error) => {total_times[day] = {}}
-	)
-	if (new Date() - new Date(day) < milliseconds_in_week)
-	{
-		browser.storage.local.get(day + '-intervals').then(
-			(item) => {time_intervals[day] = item},
-			(error) => {time_intervals[day] = {}}
-		)
-	}
-}
-
-browser.storage.local.get('alltime_per_site').then(
-	(item) => {alltime_per_site = item},
-	(error) => {alltime_per_site = {}}	
-)
-
-browser.storage.local.get('alltime_per_day').then(
-	(item) => {alltime_per_day = item},
-	(error) => {alltime_per_day = array_zeroes.slice(0)}
-)
 
 function startNewTimeInterval(url)
 {
@@ -129,9 +134,7 @@ function stopCurrentTimeInterval()
 		)
 
 		var temp_timestamp = interval_timestamp
-		temp_timestamp.setMinutes(0)
-		temp_timestamp.setSeconds(0)
-		temp_timestamp.setMilliseconds(0)
+		var firstIteration = false
 		while (temp_timestamp < end_timestamp)
 		{
 			current_day = temp_timestamp.toISOString().slice(0, 10)
@@ -143,7 +146,7 @@ function stopCurrentTimeInterval()
 			{
 				total_times[current_day][interval_url] = array_zeroes.slice(0) // duplicate the array
 			}
-			let milliseconds_to_add = (end_timestamp - temp_timestamp) > 1000 * 60 * 60 ? 1000 * 60 * 60 : end_timestamp - temp_timestamp
+			let milliseconds_to_add = ((end_timestamp - temp_timestamp) > 1000 * 60 * 60) ? 1000 * 60 * 60 : end_timestamp - temp_timestamp
 			total_times[current_day][interval_url][temp_timestamp.getHours()] += milliseconds_to_add
 			
 			browser.storage.local.set({[current_day] : total_times[current_day]}).then(
@@ -169,6 +172,13 @@ function stopCurrentTimeInterval()
 			)
 
 			temp_timestamp.setHours(temp_timestamp.getHours() + 1)
+			if (!firstIteration)
+			{
+				temp_timestamp.setMinutes(0)
+				temp_timestamp.setSeconds(0)
+				temp_timestamp.setMilliseconds(0)
+				firstIteration = false
+			}
 		}
 		interval_url = undefined
 	}
