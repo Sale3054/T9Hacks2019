@@ -1,5 +1,5 @@
 var interval_url = undefined
-var interval_timestamp = Date.now()
+var interval_timestamp = new Date()
 var current_timestamp = undefined
 var current_day = undefined
 
@@ -21,6 +21,11 @@ var milliseconds_in_week = milliseconds_in_day * 7
 var milliseconds_in_month = milliseconds_in_day * 30
 var milliseconds_in_year = milliseconds_in_day * 365
 
+browser.storage.local.get('unique_days').then(
+	(item) => {unique_days = item}, 
+	(error) => {unique_days = {}; updateDay()}
+)
+
 function updateDay()
 {
 	var updated_day = new Date().toISOString().slice(0, 10)
@@ -28,22 +33,32 @@ function updateDay()
 	{
 		current_day = updated_day
 		current_timestamp = new Date(updated_day)
-		for (day in unique_days)
+		var indices_to_erase = []
+		for (let i = 0; i < unique_days.length; i++)
 		{
-			if (current_timestamp - new Date(day) > milliseconds_in_year)
+			if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_year)
 			{
-				browser.storage.local.remove(day).then(
+				browser.storage.local.remove(unique_days[i]).then(
 					() => {}, (e) => {console.log(e)}
 				)
-				// TODO remove element from unique_days, update the storage!
+				indices_to_erase.push(i)
 			}
-			if (current_timestamp - new Date(day) > milliseconds_in_week)
+			if (current_timestamp - new Date(unique_days[i]) > milliseconds_in_week)
 			{
-				browser.storage.local.remove(day + '-intervals').then(
+				browser.storage.local.remove(unique_days[i] + '-intervals').then(
 					() => {}, (e) => {console.log(e)}
 				)
 			}
 		}
+		for (let j = unique_days.length - 1; j >= 0; j--)
+		{
+			if (j === indices_to_erase[indices_to_erase.length - 1])
+			{
+				unique_days.splice(j, 1)
+				indices_to_erase.splice(indices_to_erase.length - 1, 1)
+			}
+		}
+		browser.storage.local.set({'unique_days' : unique_days})
 	}
 }
 
@@ -57,36 +72,29 @@ function objectFilter(obj, predicate) {
     return result;
 }
 
-browser.storage.local.get('unique_days').then(
-	(item) => {unique_days = item}, 
-	(error) => {unique_days = {}}
-)
-
-updateDay()
-
 for (day in unique_days)
 {
 	browser.storage.local.get(day).then(
 		(item) => {total_times[day] = item},
-		(error) => {} // TODO
+		(error) => {total_times[day] = {}}
 	)
 	if (new Date() - new Date(day) < milliseconds_in_week)
 	{
 		browser.storage.local.get(day + '-intervals').then(
 			(item) => {time_intervals[day] = item},
-			(error) => {} // TODO
+			(error) => {time_intervals[day] = {}}
 		)
 	}
 }
 
 browser.storage.local.get('alltime_per_site').then(
 	(item) => {alltime_per_site = item},
-	(error) => {} // TODO	
+	(error) => {alltime_per_site = {}}	
 )
 
 browser.storage.local.get('alltime_per_day').then(
 	(item) => {alltime_per_day = item},
-	(error) => {} // TODO	
+	(error) => {alltime_per_day = array_zeroes.slice(0)}
 )
 
 function startNewTimeInterval(url)
@@ -96,7 +104,7 @@ function startNewTimeInterval(url)
 	{
 		console.log('Starting a new time interval for ' + url)
 		interval_url = url
-		interval_timestamp = Date.now()	
+		interval_timestamp = new Date()
 	}
 }
 
@@ -106,7 +114,7 @@ function stopCurrentTimeInterval()
 	if (interval_url !== undefined)
 	{
 		console.log('Stopping the time interval for ' + interval_url)
-		var end_timestamp = Date.now() // TODO don't use current_day here? we could have a session that spans multiple days
+		var end_timestamp = new Date()
 		if (time_intervals[current_day] === undefined)
 		{
 			time_intervals[current_day] = {}
@@ -115,19 +123,52 @@ function stopCurrentTimeInterval()
 		{
 			time_intervals[current_day][interval_url] = []	
 		}
-		time_intervals[current_day][interval_url].push([interval_timestamp, end_timestamp])
+		time_intervals[current_day][interval_url].push([interval_timestamp.getTime(), end_timestamp.getTime()])
+		browser.storage.local.set({[current_day + '-intervals'] : time_intervals[current_day]}).then(
+			() => {}, (error) => {console.log(error)}
+		)
+
 		var temp_timestamp = interval_timestamp
+		temp_timestamp.setMinutes(0)
+		temp_timestamp.setSeconds(0)
+		temp_timestamp.setMilliseconds(0)
 		while (temp_timestamp < end_timestamp)
 		{
-			current_day = new Date().toISOString().slice(0, 10)
+			current_day = temp_timestamp.toISOString().slice(0, 10)
 			if (total_times[current_day] === undefined)
 			{
 				total_times[current_day] = {}
 			}
 			if (total_times[current_day][interval_url] === undefined)
 			{
-				total_times[current_day] = array_zeroes.slice(0) // duplicate the array
-			} // TODO a lot of stuff
+				total_times[current_day][interval_url] = array_zeroes.slice(0) // duplicate the array
+			}
+			let milliseconds_to_add = (end_timestamp - temp_timestamp) > 1000 * 60 * 60 ? 1000 * 60 * 60 : end_timestamp - temp_timestamp
+			total_times[current_day][interval_url][temp_timestamp.getHours()] += milliseconds_to_add
+			
+			browser.storage.local.set({[current_day] : total_times[current_day]}).then(
+				() => {}, (error) => {console.log(error)}
+			)
+
+			if (alltime_per_site[interval_url] === undefined)
+			{
+				alltime_per_site[interval_url] = milliseconds_to_add
+			}
+			else
+			{
+				alltime_per_site[interval_url] += milliseconds_to_add
+			}
+
+			alltime_per_day[temp_timestamp.getHours()] += milliseconds_to_add
+
+			browser.storage.local.set({'alltime_per_site' : alltime_per_site}).then(
+				() => {}, (error) => {console.log(error)}
+			)
+			browser.storage.local.set({'alltime_per_day' : alltime_per_day}).then(
+				() => {}, (error) => {console.log(error)}
+			)
+
+			temp_timestamp.setHours(temp_timestamp.getHours() + 1)
 		}
 		interval_url = undefined
 	}
@@ -178,7 +219,6 @@ function getURL(tab)
 
 function convertMSToTime(ms_time)
 {
-
 	// round off the appropriate number of MS at each step
 	var milliseconds = parseInt((ms_time%1000)/100),
 		seconds = parseInt((ms_time % 1000) %60),
