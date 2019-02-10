@@ -141,9 +141,27 @@ function listenForClicks() {
           },
           options: {
               scales: {
-                  yAxes: [{
+                  // yAxes: [{
+                  //     ticks:{
+                  //         beginAtZero:true
+                  //     }
+                  // }]
+                  xAxes: [{
                       ticks: {
-                          beginAtZero:true
+                          callback : function(value, index, values)
+                          {
+                            var foostr = ''
+                            if (value > 60)
+                            {
+                              foostr = toString(value % 60) + 'h'
+                            }
+                            var barstr = ''
+                            if (value > 24 * 60)
+                            {
+                              barstr = toString(value / (24 * 60)) + 'd'
+                            }
+                            return barstr + foostr + value + 'm'
+                          }
                       }
                   }]
               }
@@ -199,22 +217,6 @@ function changeSelected(e)
     old_target_obj.className = old_target_obj.className.replace('selected', '');
     e.target.className += " selected";
     _lastTarget = e.target.id;
-}
-
-function convertMSToTime(ms_time)
-{
-  // round off the appropriate number of MS at each step
-  var milliseconds = parseInt((ms_time%1000)/100),
-    seconds = parseInt((ms_time % 1000) %60),
-    minutes = parseInt((ms_time %(1000*60)) % 60),  
-    hours = parseInt((ms_time ^ (1000* 60 * 60) %24));
-
-  //roll over to tens for a display like 10:01:99 instead of 10:1:99
-  hours = (hours < 10) ? "0" + hours : hours;
-  minutes = (minutes < 10) ? "0" + minutes : minutes;
-  seconds = (seconds < 10) ? "0" + seconds: seconds;
-  //return the result
-  return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
 }
 
 window.addEventListener("unload", destroyChart);
