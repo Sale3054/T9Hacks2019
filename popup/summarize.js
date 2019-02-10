@@ -1,3 +1,4 @@
+
 /**
  * Listen for clicks on the buttons, and send the appropriate message to
  * the content script in the page.
@@ -48,7 +49,107 @@ function listenForClicks() {
     **/
     function handleResponse(message)
     {
-      console.log(message)
+      function add(a,b)
+      {
+        return a + b;
+      }
+      /* 
+      Doubly nested dictionary; first key is date:
+      Second Key : Val combo is 
+      Website Host : Numbers => cumulative miliseconds spent by hour
+      */
+      if (myChart != undefined)
+      {
+        destroyChart();
+      }
+      var top_10_sites = 0;
+      var ctx = document.getElementById("myChart").getContext('2d');
+      var site_dict = {};
+
+      for (var day in message)
+      {
+        for (var site in message[day])
+        {
+          if (site_dict[site] === undefined)
+          {
+            site_dict[site] = message[day][site].reduce(add, 0);
+          }
+          else
+          {
+            site_dict[site] += message[day][site].reduce(add, 0);
+          }
+        }
+      }
+      site_kv_pairs = site_dict.entries();
+      var keys = [];
+      for(i = 0; i < site_kv_pairs.length; i++)
+      {
+        keys.push(site_kv_pairs[i].reverse());
+      }
+
+      keys.sort().reverse()
+      var labels = []
+      var dataum = []
+
+      for(i = 0; i < 10; i ++)
+      {
+        if(keys[i] == undefined)
+        {
+          break;
+        }
+        labels.push(keys[i][1]);
+        dataum.push(keys[i][0]);
+      }
+
+      var myChart = new Chart(ctx, {
+          type: 'horizontalBar',
+          data: {
+              labels: labels,
+              datasets: [{
+                  label: 'popularly visited sites',
+                  data: dataum,
+                  backgroundColor: [
+                      'rgba(255, 99, 132, 0.2)',
+                      'rgba(54, 162, 235, 0.2)',
+                      'rgba(255, 206, 86, 0.2)',
+                      'rgba(75, 192, 192, 0.2)',
+                      'rgba(153, 102, 255, 0.2)',
+                      'rgba(255, 159, 64, 0.2)',
+                      'rgba(255, 206, 86, 0.2)',
+                      'rgba(75, 192, 192, 0.2)',
+                      'rgba(153, 102, 255, 0.2)',
+                      'rgba(255, 159, 64, 0.2)',
+
+                  ],
+                  borderColor: [
+                      'rgba(255,99,132,1)',
+                      'rgba(54, 162, 235, 1)',
+                      'rgba(255, 206, 86, 1)',
+                      'rgba(75, 192, 192, 1)',
+                      'rgba(153, 102, 255, 1)',
+                      'rgba(255, 159, 64, 1)',
+                      'rgba(255, 206, 86, 1)',
+                      'rgba(75, 192, 192, 1)',
+                      'rgba(153, 102, 255, 1)',
+                      'rgba(255, 159, 64, 1)',
+
+                  ],
+                  borderWidth: 1
+              }]
+          },
+          options: {
+              scales: {
+                  yAxes: [{
+                      ticks: {
+                          beginAtZero:true
+                      }
+                  }]
+              }
+          }
+      });
+
+
+
     }
   });
 }
@@ -78,3 +179,28 @@ function changeClass(id)
  * If we couldn't inject the script, handle the error.
  **/
 listenForClicks();
+
+var _lastTarget = "btn1"
+
+
+// Fixes our memory leaks
+function destroyChart()
+{
+  myChart.destroy();
+}
+
+// handles tab selection
+function changeSelected(e)
+{
+    var old_target_obj = document.getElementById(_lastTarget)
+    old_target_obj.className = old_target_obj.className.replace('selected', '');
+    e.target.className += " selected";
+    _lastTarget = e.target.id;
+}
+
+window.addEventListener("unload", destroyChart);
+var btn_list = ["btn1", "btn2", "btn3", "btn4", "btn5", "btn6"];
+for (button of btn_list)
+{
+    document.getElementById(button).addEventListener("click", changeSelected);   
+}
